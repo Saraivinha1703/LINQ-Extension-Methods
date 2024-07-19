@@ -1,4 +1,4 @@
-# LINQ Extension Methods
+# LINQ Extension Methods (Language Integrated Query)
 
 All `Further Execution` LINQ methods, do not execute when they are called, they just execute when they need to turn into a List and passed to the client or be displayed. 
 
@@ -149,7 +149,7 @@ var z = collection.Cast<int>();
 ```
 The `Cast` method will convert the enumerable type to the specified type.
 
-### Chunck (Further Execution)
+### Chunk (Further Execution)
 ```cs
 IEnumerable<int> collection = [1, 2, 3, 4, 5, 6];
 
@@ -469,3 +469,268 @@ IEnumerable<int> collection = Enumerable.Empty<int>();
 ```
 
 The `Empty` method is a static method, which means if we use a lot of collections and use this method, all collections will be referencing to the same empty collection.
+
+## Set Operations
+### Distinct (Further Execution)
+```cs
+IEnumerable<int> collection = [1, 2, 1, 3, 2, 3, 2, 1]; 
+
+var z = collection.Distinct();
+```
+The `z` is of type `IEnumerable<int>`, the `Distinct` method will remove all the elements that are the same and return only the elements that are different. In this case, the `z` enumerable would have the following value: `[1, 2 ,3]`.
+
+### DistinctBy (Further Execution)
+```cs
+IEnumerable<Person> collection = [
+    new("A", 20),
+    new("B", 22),
+    new("C", 22),
+    new("D", 23),
+    new("E", 20),
+]; 
+
+var z = collection.DistinctBy(x => x.Age);
+
+record Person(string Name, int Age);
+```
+
+The `z` is of type `IEnumerable<Person>`, the `Distinct` method will remove all the elements that have the same age and return only the elements that are different. In this case, the `z` enumerable would have a collection with the persons with the names `A`, `B` and `D`.
+
+### Union (Further Execution)
+```cs
+IEnumerable<int> collection1 = [1, 2, 3];
+IEnumerable<int> collection2 = [2, 3, 4];
+
+var z = collection1.Union(collection2);
+```
+the `z` is of type `IEnumerable<int>`, the `Union` method will ignore the values that overlap and concatenate the values that are different, so the `z` collection would have the following value: `[1, 2, 3, 4]`.
+
+### Intersect (Further Execution)
+```cs
+IEnumerable<int> collection1 = [1, 2, 3];
+IEnumerable<int> collection2 = [2, 3, 4];
+
+var z = collection1.Intersect(collection2);
+```
+the `z` is of type `IEnumerable<int>`, the `Intersect` method will ignore the values that are specific in each collection and take only the values that overlap, so the `z` collection would have the following value: `[2, 3]`.
+
+
+### Except (Further Execution)
+```cs
+IEnumerable<int> collection1 = [1, 2, 3];
+IEnumerable<int> collection2 = [2, 3, 4];
+
+var z = collection1.Except(collection2);
+```
+
+the `z` is of type `IEnumerable<int>`, the `Except` method will ignore the values that are the same and unique on the collection passed to the method and take only unique values in the first collection, in other words, we are basically subtracting `collection2` from `collection1`, so the `z` collection would have the following value: `[1]`.
+
+### UnionBy (Further Execution)
+Similar to the `Union` method, but you can use it with objects and pass a specific property to base the union.
+
+### IntersectBy (Further Execution)
+Similar to the `Intersect` method, but you can use it with objects and pass a specific property to base the intersections.
+
+### ExceptBy (Further Execution)
+Similar to the `Except` method, but you can use it with objects and pass a specific property to base the exceptions.
+
+### SequenceEqual (Immediate Execution)
+```cs
+IEnumerable<int> collection1 = [1, 2, 3];
+IEnumerable<int> collection2 = [1, 2, 4];
+
+var z = collection1.SequenceEqual(collection2);
+```
+the `z` variable is type boolean, the `SequenceEqual` method checks if a collection is equal to the other one comparing its values. In this case `z` would be false.
+ 
+## Joining & Grouping
+### Zip (Further Execution)
+```cs
+IEnumerable<int> collection1 = [1, 2, 3, 4];
+IEnumerable<string> collection2 = ["a", "b", "c"];
+
+var z = collection1.Zip(collection2);
+```
+the `z` variable is of type `IEnumerable<ValueTuple<int, string>>`, the `Zip` method will run through the lists and put the values in each position together, if there are more values in one list than the other, those values will be ignored. In this case `z` would have the value: `[{"Item1": 1, "Item2": "a"}, {"Item1": 2, "Item2": "b"}, {"Item1": 3, "Item2": "c"}]`
+
+> **NOTE**: We can use more than two collections
+
+### Join (Further Execution)
+```cs
+IEnumerable<Person> collection1 = [
+    new(0, "A", 20), 
+    new(1, "B", 22), 
+    new(2, "C", 22), 
+    new(3, "D", 23)
+];
+IEnumerable<Product> collection2 = [
+    new(0, 0, "Glasses"),
+    new(1, 2, "Shirt"),
+    new(2, 1, "Gloves"),
+    new(3, 3, "Shoes"),
+    new(4, 0, "Chain"),
+    new(5, 0, "Watch"),
+    new(6, 2, "Shorts"),
+    ];
+
+var z = collection1.Join(
+    collection2,
+    person => person.Id,
+    product => product.PersonId,
+    (person, product) => $"{person.Name} bought {product.Name}");
+
+record Person(int Id, string Name, int Age);
+record Product(int Id, int PersonId, string Name);
+```
+
+`z` is a `IEnumerable<string>`, the `Join` method will take a collection, the keys to match the items and give the matching elements, then you can do whatever you want with the elements and return something, in this case `z` is getting a list of strings saying the products that which person bought, in this case the list should look something like this: `["A bought Glasses", "C bought Shirt", "B bought Gloves", "D bought Shoes", "A bought Chain", "A bought Watch", "C bought Shorts"]` 
+
+### GroupJoin (Further Execution)
+This method is very similar to the `Join` method, the difference is that instead of getting each product per person, you would have a list of products that were bought for that person.
+
+```cs
+var z = collection1.Join(
+    collection2,
+    person => person.Id,
+    product => product.PersonId,
+    (person, products) => $"{person.Name} bought {string.Join(',', products)}");
+```
+The value of `z` would be something like: `["A bought Product { Id = 0, PersonId = 0, Name = "Glasses" },Product { Id = 4, PersonId = 0, Name = "Chain" },Product { Id = 5, PersonId = 0, Name = "Watch" }", "B bought Product { Id = 2, PersonId = 1, Name = "Gloves" }", "C bought Product { Id = 1, PersonId = 2, Name = "Shirt" },Product { Id = 6, PersonId = 2, Name = "Shorts" }", "D bought Product { Id = 3, PersonId = 3, Name = "Shoes" }"]`.
+
+### Concat (Further Execution)
+```cs
+IEnumerable<int> collection1 = [1, 2, 3];
+IEnumerable<int> collection2 = [4, 5, 6];
+
+var z = collection1.Concat(collection2);
+```
+
+the `z` is type `IEnumerable<int>`, the `Concat` method will only append the array passed to the method in the end of the array, so the result would be: `[1, 2, 3, 4, 5, 6]`.
+
+### GroupBy (Further Execution)
+Similar to the `ToLookup` method, but it is not executed immediatly and returns a different type, but you can make groups passing a property to base the groups, like in the `ToLookup` example.
+
+## Sorting
+### Order (Further Execution)
+```cs
+IEnumerable<int> collection = [3, 1, 2];
+
+var z = collection.Order();
+```
+`z` is a `IEnumerable<int>` type, this is a simple example and the `Order` method will organize the array to be in a ascending order, it should have the following value: `[1, 2, 3]`
+
+### OrderDescending (Further Execution)
+```cs
+IEnumerable<int> collection = [3, 1, 2];
+
+var z = collection.OrderDescending();
+```
+`z` is a `IEnumerable<int>` type, this is a simple example and the `OrderDescending` method will organize the array to be in a descending order, it should have the following value: `[3, 2, 1]`
+
+### OrderBy (Further Execution)
+Does the same as the `Order` method, but you can pass a specific property from a object to order based on that, for example the age of persons, in this case, it would give an enumerable with the youngest to the oldest person.
+
+### OrderByDescending (Further Execution)
+Does the same as the `OrderDescending` method, but you can pass a specific property from a object to order based on that, for example the age of persons, in this case, it would give an enumerable with the oldest to the youngest person.
+
+### ThenBy (Further Execution)
+```cs
+IEnumerable<Person> collection = [
+    new("A", 20),
+    new("B", 19),
+    new("A", 22)
+];
+
+var z = collection.OrderBy(x => x.Name).ThenBy(x => x.Age);
+
+record Person(string Name, int Age);
+```
+`z` is a `IEnumerable<Person>` type, the `ThenBy` method, will apply the order respecting the previous order by the name, this sorting should result in the following value: `[{ Name: "A", Age: 20 }, { Name: "A", Age: 22 }, { Name: "B", Age: 19 }]`
+
+### ThenByDescending (Further Execution)
+```cs
+IEnumerable<Person> collection = [
+    new("A", 20),
+    new("B", 19),
+    new("A", 22)
+];
+
+var z = collection.OrderBy(x => x.Name).ThenByDescending(x => x.Age);
+
+record Person(string Name, int Age);
+```
+`z` is a `IEnumerable<Person>` type, the `ThenByDescending` method, will apply the order respecting the previous order by the name, this sorting should result in the following value: `[{ Name: "A", Age: 22 }, { Name: "A", Age: 20 }, { Name: "B", Age: 19 }]`
+
+### Reverse (Further Execution)
+```cs
+IEnumerable<int> collection = [1, 2, 3];
+
+var z = collection.Reverse();
+```
+
+`z` is of type `IEnumerable<int>`, the `Reverse` method inverts the order of a collection, this should result on the following array: `[3, 2, 1]`.
+
+## PLINQ (Parallel LINQ)
+Parallel LINQ have access to all the LINQ methods but runs them concurrently.
+
+### AsParallel
+```cs
+using System.Diagnostics;
+
+var stopwatch = Stopwatch.StartNew();
+
+var collection = Enumerable.Range(0, 10)
+    .AsParallel()
+    .Select(HeavyComputation);
+
+//this line is just used to run the Select method
+foreach(var _ in collection);
+
+stopwatch.Stop();
+Console.WriteLine(stopwatch.ElapsedMilliseconds);
+
+int HeavyComputation(int n) 
+{
+    for(int i = 0; i < 100_000_000; i++)
+    {
+        n += i;
+    }
+
+    return n;
+}
+```
+
+This enumerable have only 10 items and we are computing data that without the `AsParallel` method would take around 2.5 seconds, but with this method the `Select` runs for each item in parallel and take the execution time to something around 0.2 seconds.
+
+### WithDegreeOfParallelism
+
+
+### ParallelEnumerable.Range
+
+
+### ParallelEnumerable.Repeat
+
+
+### ParallelEnumerable.Empty
+
+
+### AsSequential
+
+
+### AsOrdered
+
+
+### AsUnordered
+
+
+### WithCancellation
+
+
+### WithMergeOptions
+
+
+### WithExecutionMode
+
+
+### ForAll
+
